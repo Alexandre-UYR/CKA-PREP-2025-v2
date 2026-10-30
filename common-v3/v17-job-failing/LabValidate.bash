@@ -59,18 +59,25 @@ fi
 
 # ---- the Job's own pods ------------------------------------------------------
 
-# The pods of the CURRENT Job are the ones the controller of this Job owns.
+# The pods of the CURRENT Job are the ones whose ownerReference carries this
+# Job's UID. (The `job-name` label would do too, but the ownerReference is
+# the thing that actually says who owns the pod.)
 JUID=$(k -n "$NS" get job "$JOB" -o jsonpath='{.metadata.uid}' 2>/dev/null)
-PODS=$(k -n "$NS" get pods -l "job-name=$JOB,controller-uid=$JUID" \
-        -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null)
+PODS=$(k -n "$NS" get pods -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}' 2>/dev/null)
 
 TOTAL=0
 SUCCPODS=0
 FAILPODS=0
+LEFTOVER=0
 while IFS= read -r p; do
   [ -n "$p" ] || continue
-  TOTAL=$((TOTAL+1))
   PH=$(k -n "$NS" get pod "$p" -o jsonpath='{.status.phase}' 2>/dev/null)
+  PUID=$(k -n "$NS" get pod "$p" -o jsonpath='{.metadata.ownerReferences[0].uid}' 2>/dev/null)
+  if [ "$PUID" != "$JUID" ]; then
+    [ "$PH" = "Failed" ] && LEFTOVER=$((LEFTOVER+1))
+    continue
+  fi
+  TOTAL=$((TOTAL+1))
   case "$PH" in
     Succeeded) SUCCPODS=$((SUCCPODS+1));;
     Failed)    FAILPODS=$((FAILPODS+1));;
@@ -85,10 +92,7 @@ eq "none of the Job's pods is Failed" "$FAILPODS" "0"
 
 # Leftovers from the Job that failed before the fix are not the Job's fault,
 # but they are worth pointing out.
-LEFTOVER=$(k -n "$NS" get pods -l "job-name=$JOB" \
-             -o jsonpath='{range .items[*]}{.metadata.labels.controller-uid}{" "}{.metadata.name}{" "}{.status.phase}{"\n"}{end}' 2>/dev/null \
-           | grep -v "^$JUID " | grep -c "Failed" || true)
-if [ -n "$LEFTOVER" ] && [ "$LEFTOVER" -gt 0 ] 2>/dev/null; then
+if [ "$LEFTOVER" -gt 0 ] 2>/dev/null; then
   note "There are still $LEFTOVER failed pod(s) in the namespace from the old Job."
   note "They belong to the Job that was replaced, not to the Job that completed."
 fi

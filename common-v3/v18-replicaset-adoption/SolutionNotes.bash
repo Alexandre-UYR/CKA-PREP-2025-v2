@@ -78,6 +78,10 @@ kubectl -n adopt get pods -o custom-columns=\
 # NAME               PHASE     OWNER
 # web-7d9f4-abcde    Running   web-adopted
 # web-7d9f4-fghij    Running   web-adopted
+#
+# The pod NAMES still carry the old ReplicaSet's hash: adoption does not
+# rename a pod, it only changes who owns it. A pod that had been replaced
+# would have a new name and a new UID.
 
 kubectl -n adopt get rs
 # NAME          DESIRED   CURRENT   READY   AGE

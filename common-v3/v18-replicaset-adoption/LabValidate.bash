@@ -121,6 +121,8 @@ note "A ReplicaSet adopts a pod only when the pod's labels match its selector"
 note "AND the pod has no controller - so the old owner has to let go first."
 note "The Deployment and a ReplicaSet must not fight over the same pods,"
 note "which is why a Deployment's own ReplicaSet carries a pod-template hash."
+note "An adopted pod keeps its old name (web-<hash>-xxxxx); only its owner"
+note "changes. A pod that was replaced has a new name AND a new UID."
 
 echo
 if [ "$FAILS" -eq 0 ]; then echo -e "${G}v18 PASSED${X}"; else echo -e "${R}v18 FAILED ($FAILS checks)${X}"; fi

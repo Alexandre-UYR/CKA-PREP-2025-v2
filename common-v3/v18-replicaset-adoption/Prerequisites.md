@@ -68,6 +68,13 @@
   many other labels the pod has - which is why the pods it adopts also keep
   their `pod-template-hash` label.
 
+- **An orphaned object and a broken one are not the same thing.** The
+  ReplicaSet here is *orphaned*: `--cascade=orphan` removed its
+  `ownerReferences`, so nothing is collecting it. A ReplicaSet that was
+  merely left pointing at a Deployment that no longer exists - a dangling
+  `ownerReference` - would be deleted by the garbage collector, because its
+  owner is gone and nothing else keeps it alive.
+
 ## Environment requirements
 
 - A cluster with at least one node and a working ReplicaSet controller.
