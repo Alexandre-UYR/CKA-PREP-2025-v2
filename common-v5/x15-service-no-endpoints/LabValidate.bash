@@ -58,7 +58,7 @@ done
 if [ -z "$WRONGLABEL" ] && [ "$NPODS" -ge 2 ]; then
   ok "the pods still carry the label app=cart-v2 ($NPODS pods)"
 else
-  bad "the pods still carry the label app=cart-v2 (wrong or missing:$WRONGLABEL)"
+  bad "the pods still carry the label app=cart-v2 (found $NPODS pod(s), and these are wrong or missing:$WRONGLABEL)"
 fi
 
 # ---------------------------------------------------------------------------
@@ -71,11 +71,10 @@ else
   FIRSTPOD=$(printf '%s\n' "$PODS" | grep -m1 '[^[:space:]]')
   # A leading and a trailing space, so that " app=cart " is found in the list.
   PLABELS=" $(k -n "$NS" get pod "$FIRSTPOD" -o go-template='{{range $k, $v := .metadata.labels}}{{$k}}={{$v}} {{end}}' 2>/dev/null) "
-  MISMATCH=""
   for entry in $SEL; do
     case "$PLABELS" in
       *" $entry "*) ok "the Service selector '$entry' matches the pods' labels" ;;
-      *) bad "the Service selector '$entry' matches the pods' labels (the pods carry:$PLABELS)"; MISMATCH="$MISMATCH $entry" ;;
+      *) bad "the Service selector '$entry' matches the pods' labels (the pods carry:$PLABELS)" ;;
     esac
   done
 fi

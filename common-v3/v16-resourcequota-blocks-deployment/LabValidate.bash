@@ -83,8 +83,8 @@ resources_missing(){
   while [ "$i" -lt 10 ]; do
     c=$(k -n "$NS" get "$kind" "$name" -o jsonpath="{$base[$i].name}" 2>/dev/null)
     [ -z "$c" ] && break
-    for pair in 'requests.cpu|requests\.cpu' 'requests.memory|requests\.memory' \
-                'limits.cpu|limits\.cpu' 'limits.memory|limits\.memory'; do
+    for pair in 'requests.cpu|requests.cpu' 'requests.memory|requests.memory' \
+                'limits.cpu|limits.cpu' 'limits.memory|limits.memory'; do
       label=${pair%%|*}
       path=${pair##*|}
       v=$(k -n "$NS" get "$kind" "$name" -o jsonpath="{$base[$i].resources.$path}" 2>/dev/null)
@@ -117,12 +117,12 @@ i=0
 while [ "$i" -lt 10 ]; do
   if [ -n "$POD" ]; then
     c=$(k -n "$NS" get pod "$POD" -o jsonpath="{.spec.containers[$i].name}" 2>/dev/null)
-    rc=$(k -n "$NS" get pod "$POD" -o jsonpath="{.spec.containers[$i].resources.requests\.cpu}" 2>/dev/null)
-    rm=$(k -n "$NS" get pod "$POD" -o jsonpath="{.spec.containers[$i].resources.requests\.memory}" 2>/dev/null)
+    rc=$(k -n "$NS" get pod "$POD" -o jsonpath="{.spec.containers[$i].resources.requests.cpu}" 2>/dev/null)
+    rm=$(k -n "$NS" get pod "$POD" -o jsonpath="{.spec.containers[$i].resources.requests.memory}" 2>/dev/null)
   else
     c=$(k -n "$NS" get deploy "$DEP" -o jsonpath="{.spec.template.spec.containers[$i].name}" 2>/dev/null)
-    rc=$(k -n "$NS" get deploy "$DEP" -o jsonpath="{.spec.template.spec.containers[$i].resources.requests\.cpu}" 2>/dev/null)
-    rm=$(k -n "$NS" get deploy "$DEP" -o jsonpath="{.spec.template.spec.containers[$i].resources.requests\.memory}" 2>/dev/null)
+    rc=$(k -n "$NS" get deploy "$DEP" -o jsonpath="{.spec.template.spec.containers[$i].resources.requests.cpu}" 2>/dev/null)
+    rm=$(k -n "$NS" get deploy "$DEP" -o jsonpath="{.spec.template.spec.containers[$i].resources.requests.memory}" 2>/dev/null)
   fi
   [ -z "$c" ] && break
   SUM_CPU=$((SUM_CPU + $(to_milli "$rc")))

@@ -137,7 +137,7 @@ note "maxUnavailable is how many may be unavailable. With BOTH at zero the contr
 note "is not allowed to create the new pod and not allowed to delete the old one, so"
 note "the rollout is deadlocked. A rolling update needs one of the two to be non-zero."
 note "The API server will not let you set them both to zero, though:"
-note "  spec.strategy.rollingUpdate.maxUnavailable: Invalid value: 0: may not be 0 when `maxSurge` is 0"
+note '  spec.strategy.rollingUpdate.maxUnavailable: Invalid value: 0: may not be 0 when `maxSurge` is 0'
 
 echo
 if [ "$FAILS" -eq 0 ]; then echo -e "${G}x17 PASSED${X}"; else echo -e "${R}x17 FAILED ($FAILS checks)${X}"; fi

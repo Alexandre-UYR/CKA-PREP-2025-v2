@@ -117,10 +117,10 @@ READY=$(k -n "$NS" get pod "$POD" -o jsonpath='{.status.containerStatuses[0].rea
 eq "the Pod $POD has a ready container" "$READY" "true"
 
 # ---- every field stated ----
-RC=$(k -n "$NS" get pod "$POD" -o jsonpath='{.spec.containers[0].resources.requests\.cpu}' 2>/dev/null)
-RM=$(k -n "$NS" get pod "$POD" -o jsonpath='{.spec.containers[0].resources.requests\.memory}' 2>/dev/null)
-LC=$(k -n "$NS" get pod "$POD" -o jsonpath='{.spec.containers[0].resources.limits\.cpu}' 2>/dev/null)
-LM=$(k -n "$NS" get pod "$POD" -o jsonpath='{.spec.containers[0].resources.limits\.memory}' 2>/dev/null)
+RC=$(k -n "$NS" get pod "$POD" -o jsonpath='{.spec.containers[0].resources.requests.cpu}' 2>/dev/null)
+RM=$(k -n "$NS" get pod "$POD" -o jsonpath='{.spec.containers[0].resources.requests.memory}' 2>/dev/null)
+LC=$(k -n "$NS" get pod "$POD" -o jsonpath='{.spec.containers[0].resources.limits.cpu}' 2>/dev/null)
+LM=$(k -n "$NS" get pod "$POD" -o jsonpath='{.spec.containers[0].resources.limits.memory}' 2>/dev/null)
 
 MISSING=""
 [ -z "$RC" ] && MISSING="$MISSING requests.cpu"
