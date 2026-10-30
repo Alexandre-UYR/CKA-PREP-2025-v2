@@ -1,22 +1,108 @@
 # CKA Practice (Simple Edition)
 
-Straightforward CKA practice labs derived from the CKA-PREP playlist. Every question lives in its own folder with three bash files:
+Straightforward CKA practice labs derived from the CKA-PREP playlist. Every question
+lives in its own folder with the environment it starts from, the task, and an
+automatic PASS/FAIL checker.
 
-- `LabSetUp.bash` � copy/paste into Killercoda (or any Kubernetes cluster) to prep the environment.
-- `Questions.bash` � the scenario text plus the YouTube link for the walkthrough.
-- `SolutionNotes.bash` � a step-by-step solution when you need a hint.
+## The model
 
-## How to Use
-1. Launch the CKA Killercoda playground or your own cluster.
-2. Clone this repo inside the environment.
-3. Pick a folder under `Question-*`.
-4. Run `./scripts/run-question.sh Question-01` or cd ~/CKA-PREP-2025-v2
-bash scripts/run-question.sh "Question-9 Network-Policy" to apply the setup and print the question text, or run `bash Question-01/LabSetUp.bash` manually.
-5. Work through the task, then consult `SolutionNotes.bash` if you need help.
+Every CKA task is really four things, and the exam only ever shows you two of them:
 
-## Available Questions
-| Question | Topic | Video |
+```
+   pre-state            task                 answer            reset
+  (already there)  ────────────────▶  (you write this)  ────────────────▶ (back to pre-state)
+   LabSetUp.bash                          solve it         LabValidate.bash
+```
+
+The exam hands you the **pre-state** and the **task**, and grades the **answer**.
+Everything else — what the pre-state should contain, how to rebuild it, and how to
+tell whether the answer is right — is the part the exam does not give you, and the
+part that is worth rehearsing.
+
+## How to use it
+
+```bash
+./lab.sh list                    # the questions
+./lab.sh q1                      # provision the environment for question 1
+./lab.sh q1 task                 # read the question
+#   ...solve it...
+./lab.sh q1 validate             # PASS/FAIL, one line per check
+./lab.sh q1 reset                # wipe it for another attempt
+```
+
+`<q>` can be `1`, `q1`, `Question-1` or part of the folder name (`mariadb`).
+Other actions: `prerequisites` (the analysis of what was set up and why) and
+`solution` (the reference answer).
+
+`validate` prints one line per check and a final `Q1 PASSED` / `Q1 FAILED (n checks)`.
+A failed line tells you what it found and what it wanted, so it doubles as a hint.
+
+## Available questions
+
+| Question | Topic | Needs |
 |----------|-------|-------|
-| Question-01 | Install Argo CD using Helm without CRDs | https://youtu.be/8GzJ-x9ffE0 |
+| [Question-1](Question-1%20MariaDB-Persistent%20volume) | MariaDB: re-create a Deployment on a retained PV | a cluster with a `hostPath` volume |
+| [Question-2](Question-2%20ArgoCD) | Install Argo CD with Helm, CRDs excluded | `helm`, the Argo CD CRDs pre-installed |
+| [Question-3](Question-3%20Sidecar) | Add a sidecar container sharing a volume | — |
+| [Question-4](Question-4%20Resource-Allocation) | Requests and limits split evenly across a node | — |
+| [Question-5](Question-5%20HPA) | HPA with a scale-down stabilisation window | metrics-server |
+| [Question-6](Question-6%20CRDs) | List CRDs and `kubectl explain` a field | the cert-manager CRDs |
+| [Question-7](Question-7%20PriorityClass) | PriorityClass one below the highest, applied to a Deployment | — |
+| [Question-8](Question-8%20CNI%20%26%20Network%20Policy) | Install a CNI that enforces NetworkPolicy | a disposable cluster |
+| [Question-9](Question-9%20Cri-Dockerd) | Install and configure cri-dockerd | root on a node |
+| [Question-10](Question-10%20Taints-Tolerations) | Taint a node and tolerate it | — |
+| [Question-11](Question-11%20Gateway-API) | Migrate an Ingress to Gateway API | the Gateway API CRDs |
+| [Question-12](Question-12%20Ingress) | NodePort Service plus an Ingress | an ingress controller (optional) |
+| [Question-13](Question-13%20Network-Policy) | Pick the least permissive NetworkPolicy | a CNI that enforces policies |
+| [Question-14](Question-14%20Storage-Class) | Create a StorageClass and make it the only default | — |
+| [Question-15](Question-15%20Etcd-Fix) | Repair a kube-apiserver pointed at etcd's peer port | control-plane node access |
+| [Question-16](Question-16%20NodePort) | Expose a Deployment on a NodePort | — |
+| [Question-17](Question-17%20TLS-Config) | TLSv1.3 only, plus an `/etc/hosts` entry | node access for `/etc/hosts` |
 
-More questions can be added by copying the template folder and dropping in the three bash files from the original collection.
+Questions 8, 9 and 15 run **on the node**, not through `kubectl`. Question 15
+deliberately takes the API server down, so nothing that talks to the cluster will
+work until it is fixed.
+
+## What is in a question folder
+
+```
+Question-1 MariaDB-Persistent volume/
+  LabSetUp.bash       provisions the starting state
+  Questions.bash      the task, in exam wording
+  LabValidate.bash    grades your answer against the real cluster state
+  LabReset.bash       restores the starting state for another attempt
+  Prerequisites.md    what the setup creates, why each piece is needed, and the gotchas
+  SolutionNotes.bash  the reference answer
+```
+
+`Prerequisites.md` is the one worth reading first. It is the answer to "what has
+to be there before I can even attempt this question", written out object by
+object, and it is where the reasoning lives.
+
+`APPROACH.md` explains the method behind all of it: how to derive the
+prerequisites from a question, how to write a checker that grades the outcome
+rather than the method, and what a reset has to undo that a namespace deletion
+does not.
+
+## Getting into the environment
+
+1. Launch a CKA playground, or point `kubectl` at your own cluster
+   (minikube, kind, or a cloud cluster).
+2. Clone this repo on the machine that has `kubectl`.
+3. Run `./lab.sh q1` to build the environment and read the question.
+
+```bash
+alias k=kubectl
+export do="--dry-run=client -o yaml"
+```
+
+## Notes
+
+- These are original practice scenarios written against the CKA curriculum and the
+  official Kubernetes documentation. They are not official exam content.
+- Some questions need extra components (metrics-server, the Gateway API CRDs, the
+  cert-manager CRDs, an ingress controller, a NetworkPolicy-enforcing CNI). Each
+  question's `Prerequisites.md` says so under "Environment requirements".
+- `LabSetUp.bash` is idempotent: you can re-run it after a reset.
+- Time yourself. Five to eight minutes per question is a reasonable target, and
+  use only the official Kubernetes documentation while you work.

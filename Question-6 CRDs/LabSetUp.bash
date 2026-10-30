@@ -7,6 +7,18 @@ kubectl create ns cert-manager --dry-run=client -o yaml | kubectl apply -f -
 echo "🔹 Applying cert-manager CRDs..."
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.14.0/cert-manager.crds.yaml
 
+echo "🔹 Waiting for the Certificate CRD to be established..."
+# `kubectl explain certificate.spec.subject` resolves the custom resource
+# through the CRD's OpenAPI schema, so the CRD has to be Established before the
+# candidate runs it. apply returns before that happens.
+for i in $(seq 1 30); do
+  if kubectl get crd certificates.cert-manager.io -o jsonpath='{.status.conditions[?(@.type=="Established")].status}' 2>/dev/null | grep -q True; then
+    echo "   certificates.cert-manager.io is established."
+    break
+  fi
+  sleep 2
+done
+
 echo "🔹 Creating minimal cert-manager Deployment..."
 cat <<EOF | kubectl apply -n cert-manager -f -
 apiVersion: apps/v1

@@ -5,6 +5,11 @@ echo "🔹 Creating namespaces..."
 kubectl create namespace frontend --dry-run=client -o yaml | kubectl apply -f -
 kubectl create namespace backend --dry-run=client -o yaml | kubectl apply -f -
 
+# The frontend namespace must be labelled name=frontend: policy-z's namespaceSelector
+# matches on that label, so without it the policy does not actually let the frontend
+# talk to the backend.
+kubectl label namespace frontend name=frontend --overwrite
+
 echo "🔹 Deploying backend app..."
 kubectl apply -n backend -f - <<EOF
 apiVersion: apps/v1
@@ -30,7 +35,8 @@ spec:
 EOF
 
 echo "🔹 Exposing backend as ClusterIP service..."
-kubectl expose deployment backend-deployment -n backend --port=80 --target-port=80 --name=backend-service
+kubectl expose deployment backend-deployment -n backend --port=80 --target-port=80 --name=backend-service \
+  --dry-run=client -o yaml | kubectl apply -f -
 
 echo "🔹 Deploying frontend app..."
 kubectl apply -n frontend -f - <<EOF

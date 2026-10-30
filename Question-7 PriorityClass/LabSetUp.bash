@@ -39,3 +39,7 @@ spec:
 EOF
 
 echo "✅ Lab setup complete!"
+
+# Record the deployment UID so the grader can prove the deployment was PATCHED
+# and not deleted and recreated by the candidate.
+mkdir -p /tmp/cka-lab && kubectl get deploy busybox-logger -n priority -o jsonpath='{.metadata.uid}' > /tmp/cka-lab/q7.deploy.uid

@@ -5,9 +5,15 @@ set -e
 kubectl create namespace nginx-static || true
 
 # Step 2: Create a TLS secret (self-signed)
+# Keep the key material in a scratch directory, not in the working directory.
+mkdir -p /tmp/cka-lab
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-  -keyout tls.key -out tls.crt -subj "/CN=ckaquestion.k8s.local"
-kubectl -n nginx-static create secret tls nginx-tls --cert=tls.crt --key=tls.key
+  -keyout /tmp/cka-lab/q17.tls.key -out /tmp/cka-lab/q17.tls.crt -subj "/CN=ckaquestion.k8s.local"
+# apply (not create) so a second run of the setup does not die on AlreadyExists
+kubectl -n nginx-static create secret tls nginx-tls \
+  --cert=/tmp/cka-lab/q17.tls.crt --key=/tmp/cka-lab/q17.tls.key \
+  --dry-run=client -o yaml | kubectl apply -f -
+rm -f /tmp/cka-lab/q17.tls.crt /tmp/cka-lab/q17.tls.key
 
 # Step 3: Create ConfigMap with TLSv1.2 and TLSv1.3 enabled
 cat <<EOF | kubectl -n nginx-static apply -f -
@@ -65,8 +71,33 @@ spec:
           secretName: nginx-tls
 EOF
 
-# Step 5: Create a ClusterIP service
-kubectl -n nginx-static expose deployment nginx-static --port=443 --target-port=443 --name=nginx-static
+# Step 5: Create the ClusterIP service the question talks about.
+# The question says "There is a service called nginx-service in the nginx-static
+# namespace that is currently exposing the deployment", so that is the name it has.
+cat <<EOF | kubectl -n nginx-static apply -f -
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  namespace: nginx-static
+spec:
+  type: ClusterIP
+  selector:
+    app: nginx-static
+  ports:
+  - name: https
+    port: 443
+    targetPort: 443
+    protocol: TCP
+EOF
+
+# Step 6: Record the state the validator compares against.
+# The pod's creation timestamp proves the pods were recreated after the ConfigMap
+# was edited - editing a ConfigMap does not restart the pods that mount it.
+kubectl -n nginx-static rollout status deployment/nginx-static --timeout=180s || true
+mkdir -p /tmp/cka-lab
+kubectl -n nginx-static get pods -l app=nginx-static -o jsonpath='{.items[0].metadata.creationTimestamp}' \
+  > /tmp/cka-lab/q17.pod.before 2>/dev/null || true
+date +%s > /tmp/cka-lab/q17.setup.time
 
 echo "nginx TLS lab setup complete."
-

@@ -3,10 +3,11 @@
 k edit cm -n nginx-static nginx-config # remove TLSv1.2 from SSL protocols (remove from last applied configuration for safety)
 
 # Step 2
-# We need to get the IP of the service
+# We need to get the IP of the service. The Service is called nginx-service
+# (it is the one the question names); the namespace is nginx-static.
 k get svc -n nginx-static
 # We need to add this IP with the host name to /etc/hosts
-IP=$(k get svc -n nginx-static nginx-static -o jsonpath='{.spec.clusterIP}')
+IP=$(k get svc -n nginx-static nginx-service -o jsonpath='{.spec.clusterIP}')
 echo "$IP ckaquestion.k8s.local" | sudo tee -a /etc/hosts
 # Check the hosts file has been updated the IP and host should be added to the bottom of the file
 sudo cat /etc/hosts

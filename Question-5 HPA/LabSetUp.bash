@@ -8,8 +8,14 @@ echo "🔹 Deploying metrics-server (required for HPA)..."
 kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 
 echo "🔹 Patching metrics-server to allow insecure TLS (Killercoda environment)..."
-kubectl patch deployment metrics-server -n kube-system \
-  --type='json' -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--kubelet-insecure-tls"}]' || true
+# The JSON patch below APPENDS to the args array, so running setup twice would
+# add --kubelet-insecure-tls twice. Only patch when the flag is not there yet.
+if kubectl get deployment metrics-server -n kube-system -o jsonpath='{.spec.template.spec.containers[0].args}' 2>/dev/null | grep -q -- '--kubelet-insecure-tls'; then
+  echo "   --kubelet-insecure-tls already present, skipping patch."
+else
+  kubectl patch deployment metrics-server -n kube-system \
+    --type='json' -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--kubelet-insecure-tls"}]' || true
+fi
 
 echo "🔹 Waiting for metrics-server rollout..."
 kubectl rollout status deployment metrics-server -n kube-system
@@ -44,7 +50,8 @@ spec:
 EOF
 
 echo "🔹 Exposing Apache deployment internally..."
-kubectl expose deployment apache-deployment -n autoscale --port=80 --target-port=80
+# dry-run + apply so a second run of setup does not fail on "already exists".
+kubectl expose deployment apache-deployment -n autoscale --port=80 --target-port=80 --dry-run=client -o yaml | kubectl apply -f -
 
 echo "✅ HPA lab setup complete."
 echo "   - Namespace: autoscale"

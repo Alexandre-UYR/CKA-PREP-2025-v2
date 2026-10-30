@@ -52,7 +52,9 @@ openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
   -keyout tls.key -out tls.crt \
   -subj "/CN=gateway.web.k8s.local/O=web" >/dev/null 2>&1
 
-kubectl create secret tls web-tls --cert=tls.crt --key=tls.key >/dev/null
+# apply (not create) so a second run of the setup does not die on AlreadyExists
+kubectl create secret tls web-tls --cert=tls.crt --key=tls.key \
+  --dry-run=client -o yaml | kubectl apply -f - >/dev/null
 rm -f tls.crt tls.key
 
 # 5. Create an existing Ingress resource (to migrate from)
