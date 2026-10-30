@@ -37,29 +37,35 @@ Other actions: `prerequisites` (the analysis of what was set up and why) and
 `validate` prints one line per check and a final `Q1 PASSED` / `Q1 FAILED (n checks)`.
 A failed line tells you what it found and what it wanted, so it doubles as a hint.
 
-## Three sets of questions
+## Five sets of questions
 
-This folder holds **three** sets, all built the same way:
+This folder holds **five** sets, all built the same way:
 
 | Set | Runner | Questions | What it is |
 |---|---|---|---|
 | The original set | `./lab.sh` | `Question-1` … `Question-17` | The questions this repo started with, each with its setup, task and solution notes. |
-| [`common-v2/`](common-v2/) | `common-v2/lab.sh` | `c1` … `c30` | A broad sweep across the curriculum (resource creation, cluster operations, scheduling, storage, networking, security, CRDs, Helm and Kustomize, workload management, monitoring and troubleshooting, and exam environment habits), organised by domain. |
-| [`common-v3/`](common-v3/) | `common-v3/lab.sh` | `v1` … `v20` | The hard set. Every question starts from a cluster that is already broken or half-built, so the work is diagnosis rather than construction. |
+| [`common-v2/`](common-v2/) | `common-v2/lab.sh` | `c1` … `c30` | A broad sweep across the curriculum, organised by domain. Teaches the **shapes** of things. |
+| [`common-v3/`](common-v3/) | `common-v3/lab.sh` | `v1` … `v20` | The hard set. Every question starts from a cluster that is already broken or half-built. Teaches **diagnosis**. |
+| [`common-v4/`](common-v4/) | `common-v4/lab.sh` | `w1` … `w20` | Build and expose — Deployments, Services, Ingress, Gateway API, Helm, Kustomize, placement. Teaches **building**. |
+| [`common-v5/`](common-v5/) | `common-v5/lab.sh` | `x1` … `x20` | Operate, diagnose and secure — etcd, the control plane, RBAC, NetworkPolicy, metrics, quotas, admission. Teaches **operating**. |
 
-The sets do not overlap. The original set goes deep on the individual tasks from
-the CKA-PREP playlist, `common-v2` teaches the shapes of things, and `common-v3`
-is the diagnosis pass. Work them in that order.
+The sets are meant to be worked in order: the original set goes deep on the
+playlist tasks, `common-v2` teaches the shapes, `common-v3` is the diagnosis
+pass, `common-v4` the build pass, and `common-v5` the operations and security
+pass.
 
 Each set has its own runner, because the folders are named differently:
 
 ```bash
-./lab.sh q1 setup            # the original set
-./lab.sh q1 validate
-
+./lab.sh q1 setup                    # the original set
 cd common-v2 && ./lab.sh c1 setup     # common-v2
 cd common-v3 && ./lab.sh v1 setup     # common-v3
+cd common-v4 && ./lab.sh w1 setup     # common-v4
+cd common-v5 && ./lab.sh x1 setup     # common-v5
 ```
+
+[`LAB-CONTRACT.md`](LAB-CONTRACT.md) is the file-by-file contract every scenario
+folder in every set follows.
 
 ## The original set
 
