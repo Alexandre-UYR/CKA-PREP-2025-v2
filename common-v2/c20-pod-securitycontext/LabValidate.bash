@@ -29,20 +29,37 @@ eq "the Pod is Running" "$PHASE" "Running"
 READY=$(k -n "$NS" get pod "$POD" -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null)
 eq "the Pod is Ready" "$READY" "True"
 
-# ---- pod-level securityContext ----
-RUNAS=$(k -n "$NS" get pod "$POD" -o jsonpath='{.spec.securityContext.runAsUser}' 2>/dev/null)
-eq "the pod securityContext sets runAsUser: 1000" "$RUNAS" "1000"
+# ---- runAsUser and runAsNonRoot ----
+# Both may be set on the Pod's securityContext or on a container's. The Pod
+# level applies to every container that does not override it, so accept either.
+POD_RUNAS=$(k -n "$NS" get pod "$POD" -o jsonpath='{.spec.securityContext.runAsUser}' 2>/dev/null)
+POD_NONROOT=$(k -n "$NS" get pod "$POD" -o jsonpath='{.spec.securityContext.runAsNonRoot}' 2>/dev/null)
 
-NONROOT=$(k -n "$NS" get pod "$POD" -o jsonpath='{.spec.securityContext.runAsNonRoot}' 2>/dev/null)
-eq "the pod securityContext sets runAsNonRoot: true" "$NONROOT" "true"
+RUNAS="$POD_RUNAS"; V_RUNAS=""; SRC_RUNAS="pod"
+[ -n "$POD_RUNAS" ] || SRC_RUNAS="container"
+NONROOT="$POD_NONROOT"; V_NONROOT=""; SRC_NONROOT="pod"
+[ -n "$POD_NONROOT" ] || SRC_NONROOT="container"
 
 # ---- container-level securityContext ----
 CNAMES=$(k -n "$NS" get pod "$POD" -o jsonpath='{.spec.containers[*].name}' 2>/dev/null)
 nonempty "the Pod has at least one container" "$CNAMES"
 
 POD_SECCOMP=$(k -n "$NS" get pod "$POD" -o jsonpath='{.spec.securityContext.seccompProfile.type}' 2>/dev/null)
-CON_SECCOMP=""
+NC=$(printf '%s' "$CNAMES" | wc -w | tr -d ' ')
+CON_SECCOMP=""; V_SEC=""
+
 for c in $CNAMES; do
+  # A container-level runAsUser / runAsNonRoot is only consulted when the Pod
+  # level does not set it.
+  if [ -z "$POD_RUNAS" ]; then
+    v=$(k -n "$NS" get pod "$POD" -o jsonpath="{.spec.containers[?(@.name==\"$c\")].securityContext.runAsUser}" 2>/dev/null)
+    [ -n "$v" ] && { RUNAS="$v"; V_RUNAS="$V_RUNAS $c=$v"; }
+  fi
+  if [ -z "$POD_NONROOT" ]; then
+    v=$(k -n "$NS" get pod "$POD" -o jsonpath="{.spec.containers[?(@.name==\"$c\")].securityContext.runAsNonRoot}" 2>/dev/null)
+    [ -n "$v" ] && { NONROOT="$v"; V_NONROOT="$V_NONROOT $c=$v"; }
+  fi
+
   APE=$(k -n "$NS" get pod "$POD" -o jsonpath="{.spec.containers[?(@.name==\"$c\")].securityContext.allowPrivilegeEscalation}" 2>/dev/null)
   eq "container $c sets allowPrivilegeEscalation: false" "$APE" "false"
 
@@ -58,21 +75,25 @@ for c in $CNAMES; do
 
   CT=$(k -n "$NS" get pod "$POD" -o jsonpath="{.spec.containers[?(@.name==\"$c\")].securityContext.seccompProfile.type}" 2>/dev/null)
   CON_SECCOMP="$CON_SECCOMP $CT"
+  if [ "$CT" = "RuntimeDefault" ]; then V_SEC="$V_SEC 1"; else V_SEC="$V_SEC 0"; fi
 done
+
+eq "runAsUser is 1000 (set at the $SRC_RUNAS level)" "$RUNAS" "1000"
+eq "runAsNonRoot is true (set at the $SRC_NONROOT level)" "$NONROOT" "true"
 
 # ---- the seccomp profile may sit on the pod or on the container ----
 CON_SECCOMP_TRIM="$(printf '%s' "$CON_SECCOMP" | sed 's/^ *//')"
-SECCOMP_FOUND=0
-[ "$POD_SECCOMP" = "RuntimeDefault" ] && SECCOMP_FOUND=1
-case "$CON_SECCOMP_TRIM" in *RuntimeDefault*) SECCOMP_FOUND=1;; esac
-if [ "$SECCOMP_FOUND" = "1" ]; then
+if [ "$POD_SECCOMP" = "RuntimeDefault" ]; then SECCOMP_FOUND=$NC; else SECCOMP_FOUND=$(printf '%s' "$V_SEC" | tr ' ' '\n' | grep -c '^1$'); fi
+if [ "$SECCOMP_FOUND" = "$NC" ] && [ "$NC" -gt 0 ]; then
   ok "the seccomp profile is RuntimeDefault (pod: '$POD_SECCOMP', container: '$CON_SECCOMP_TRIM')"
 else
   bad "the seccomp profile is RuntimeDefault (pod: '$POD_SECCOMP', container: '$CON_SECCOMP_TRIM')"
 fi
 
-note "runAsUser, runAsNonRoot and the seccomp profile are POD-level fields;"
-note "allowPrivilegeEscalation and capabilities are CONTAINER-level fields."
+note "runAsUser, runAsNonRoot and the seccomp profile may be set on the Pod's"
+note "securityContext or on a container's - the Pod level applies to every"
+note "container that does not override it. allowPrivilegeEscalation and"
+note "capabilities are container-level fields."
 note "dropping ALL capabilities and then adding one back is a no-op at best."
 
 echo

@@ -13,8 +13,8 @@
 |---|---|---|
 | A | A Pod named `restricted` in namespace `secure` | `LabValidate.bash` |
 | B | The Pod is actually Running and Ready | `LabValidate.bash` |
-| C | Pod-level `securityContext.runAsUser: 1000` | `LabValidate.bash` |
-| D | Pod-level `securityContext.runAsNonRoot: true` | `LabValidate.bash` |
+| C | `securityContext.runAsUser: 1000`, on the Pod or on the container | `LabValidate.bash` |
+| D | `securityContext.runAsNonRoot: true`, on the Pod or on the container | `LabValidate.bash` |
 | E | Container-level `securityContext.allowPrivilegeEscalation: false` | `LabValidate.bash` |
 | F | Container-level `securityContext.capabilities.drop: ["ALL"]` | `LabValidate.bash` |
 | G | No capability added back (`capabilities.add` empty or absent) | `LabValidate.bash` |
