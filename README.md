@@ -37,20 +37,19 @@ Other actions: `prerequisites` (the analysis of what was set up and why) and
 `validate` prints one line per check and a final `Q1 PASSED` / `Q1 FAILED (n checks)`.
 A failed line tells you what it found and what it wanted, so it doubles as a hint.
 
-## Two sets of questions
+## Three sets of questions
 
-This folder holds **two** sets, both built the same way:
+This folder holds **three** sets, all built the same way:
 
 | Set | Runner | Questions | What it is |
 |---|---|---|---|
 | The original set | `./lab.sh` | `Question-1` … `Question-17` | The questions this repo started with, each with its setup, task and solution notes. |
-| [`common-v2/`](common-v2/) | `common-v2/lab.sh` | `c1` … `c30` | A second set, organised by CKA curriculum domain rather than by source video. Same six files per question. |
+| [`common-v2/`](common-v2/) | `common-v2/lab.sh` | `c1` … `c30` | A broad sweep across the curriculum (resource creation, cluster operations, scheduling, storage, networking, security, CRDs, Helm and Kustomize, workload management, monitoring and troubleshooting, and exam environment habits), organised by domain. |
+| [`common-v3/`](common-v3/) | `common-v3/lab.sh` | `v1` … `v20` | The hard set. Every question starts from a cluster that is already broken or half-built, so the work is diagnosis rather than construction. |
 
-The two sets do not overlap: `common-v2` is a broad sweep across the curriculum
-(resource creation, cluster operations, scheduling, storage, networking,
-security, CRDs, Helm and Kustomize, workload management, monitoring and
-troubleshooting, and exam environment habits), while the original set goes
-deeper on the individual tasks from the CKA-PREP playlist.
+The sets do not overlap. The original set goes deep on the individual tasks from
+the CKA-PREP playlist, `common-v2` teaches the shapes of things, and `common-v3`
+is the diagnosis pass. Work them in that order.
 
 Each set has its own runner, because the folders are named differently:
 
@@ -58,9 +57,8 @@ Each set has its own runner, because the folders are named differently:
 ./lab.sh q1 setup            # the original set
 ./lab.sh q1 validate
 
-cd common-v2
-./lab.sh c1 setup            # common-v2
-./lab.sh c1 validate
+cd common-v2 && ./lab.sh c1 setup     # common-v2
+cd common-v3 && ./lab.sh v1 setup     # common-v3
 ```
 
 ## The original set

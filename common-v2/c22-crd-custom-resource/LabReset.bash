@@ -11,8 +11,8 @@ k delete crd widgets.example.com --ignore-not-found --timeout=120s >/dev/null 2>
 
 k delete namespace custom --ignore-not-found --timeout=120s >/dev/null 2>&1
 
-# The manifest the candidate was asked to save lives on disk, not in the
-# cluster, so it has to be removed by hand.
-rm -f "$STATE/c22.crd.yaml"
+# The manifests the candidate was asked to save live on disk, not in the
+# cluster, so they have to be removed by hand.
+rm -f "$STATE/c22.crd.yaml" "$STATE/c22.widget.yaml"
 
 echo "c22 reset: CRD widgets.example.com, namespace custom and $STATE/c22.crd.yaml removed"

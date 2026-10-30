@@ -16,7 +16,7 @@ mkdir -p "$STATE"
 # previous attempt's custom resources as well.
 kubectl delete crd widgets.example.com --ignore-not-found --timeout=120s >/dev/null 2>&1 || true
 
-rm -f "$STATE/c22.crd.yaml"
+rm -f "$STATE/c22.crd.yaml" "$STATE/c22.widget.yaml"
 
 kubectl create namespace "$NS" --dry-run=client -o yaml | kubectl apply -f -
 
